@@ -56,20 +56,36 @@ exports.loginPost = (req, res, next) => {
   const { id, username } = req.user;
   const payload = { id, username };
 
-  jwt.sign(
-    payload,
-    process.env.JWT_secret,
-    { expiresIn: "7d" },
-    (err, token) => {
-      if (err) {
-        res.json({
-          message: "Error generating token",
-        });
-      }
+  const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: "10m",
+  });
 
-      res.status(201).json({
-        token,
-      });
-    }
-  );
+  const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: "7d",
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  });
+
+  res.json({ accessToken });
+};
+
+exports.refreshToken = (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) return res.json({ message: "Unauthorized" });
+
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    if (err) return res.json({ message: "invalid refresh token" });
+
+    const payload = { id: user.id, username: user.username };
+    const newAccessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+      expiresIn: "10m",
+    });
+
+    res.json({ accessToken: newAccessToken });
+  });
 };

@@ -7,13 +7,22 @@ datasource db {
   url      = env("TEST_DATABASE_URL")
 }
 
+model Request {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  sender User @relation(fields: [userId], references: [id])
+}
+
 model User {
   id       Int       @id @default(autoincrement())
   username String    @unique @db.VarChar(20)
-  password String    
+  password String
   profile  Profile?
   chats    Chat[]
   messages Message[]
+  friends  User[]    @relation("UserFriends")
+  friendOf User[]    @relation("UserFriends")
+  requests Request[]
 }
 
 model Message {
