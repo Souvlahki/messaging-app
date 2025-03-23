@@ -11,6 +11,10 @@ authRouter.post(
   authController.loginPost
 );
 
-authRouter.post("/token", authController.refreshToken);
+authRouter.post(
+  "/token",
+  passport.authenticate("jwt", { session: false }),
+  authController.refreshToken
+);
 
 module.exports = authRouter;
